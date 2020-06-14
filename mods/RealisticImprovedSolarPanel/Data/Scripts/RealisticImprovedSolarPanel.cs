@@ -19,7 +19,7 @@ namespace xirathonxbox.spaceengineers.mods
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
     public class RealisticImprovedSolarPanel : MySessionComponentBase
     {
-        const float densityMultiplier = 0.7f; //400 * 0.3 = 120; 
+        const float densityMultiplier = 0.6f; //400 * 0.4 = 160; 
 
         //track the current max output so when we change it, we don't trigger an infinite loop
         private Dictionary<long, float> currentMaxOutput = new Dictionary<long, float>();
