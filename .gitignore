@@ -3,3 +3,7 @@
 ################################################################################
 
 /.vs
+/mods/.vs/SpaceEngineersMods/v16
+/mods/RealisticImprovedSolarPanel/bin/Debug
+/mods/RealisticImprovedSolarPanel/obj/Debug
+/scripts/.vs/SpaceEngineersScripts/v16
