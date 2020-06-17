@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticImprovedSolarPanel", "RealisticImprovedSolarPanel\RealisticImprovedSolarPanel.csproj", "{7BF66352-11C5-4DA5-A9C1-A2AE0932FF5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticLightSettings", "RealisticLightSettings\RealisticLightSettings.csproj", "{FD866180-88CA-457E-A349-A4649B689D87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{7BF66352-11C5-4DA5-A9C1-A2AE0932FF5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BF66352-11C5-4DA5-A9C1-A2AE0932FF5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BF66352-11C5-4DA5-A9C1-A2AE0932FF5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD866180-88CA-457E-A349-A4649B689D87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD866180-88CA-457E-A349-A4649B689D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD866180-88CA-457E-A349-A4649B689D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD866180-88CA-457E-A349-A4649B689D87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
