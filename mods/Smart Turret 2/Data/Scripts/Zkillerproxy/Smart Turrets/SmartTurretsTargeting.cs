@@ -20,198 +20,223 @@ namespace Zkillerproxy.SmartTurretMod
         //MAIN TARGETING. The main targeting method, only to be run on other threads because this is laggy af.
         public static void validateTargets(WorkData tempData)
         {
-            TargetingData data = (TargetingData)tempData;
-            Vector3D turretLocation = data.turret.Entity.GetPosition();
-            Dictionary<IMyEntity, ushort> targetTypeDictionary = getTargetTypeDictionary(data.targets);
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 0: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are not functional.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
+            try
             {
-                ushort curretType = targetTypeDictionary.ElementAt(i).Value;
+                TargetingData data = (TargetingData)tempData;
+                Vector3D turretLocation = data.turret.Entity.GetPosition();
+                Dictionary<IMyEntity, ushort> targetTypeDictionary = getTargetTypeDictionary(data.targets);
 
-                //Ignore non-cube types.
-                if (curretType != 31 && curretType != 32 && curretType != 33)
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 0: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are not functional.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
                 {
-                    if (((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).IsFunctional == false)
+                    ushort curretType = targetTypeDictionary.ElementAt(i).Value;
+
+                    //Ignore non-cube types.
+                    if (curretType != 31 && curretType != 32 && curretType != 33)
                     {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                        if (((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).IsFunctional == false)
+                        {
+                            targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                        }
                     }
                 }
-            }
 
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 1: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are disabled in targeting settings.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
-            {
-                ushort CurretType = targetTypeDictionary.ElementAt(i).Value;
-
-                if (CurretType != 35)
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 1: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are disabled in targeting settings.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
                 {
-                    MyTerminalControlListBoxItem typeItem = data.turret.targetTypesListItems.Find((x) => { return (x.UserData as ListBoxItemData).id == CurretType; });
-
-                    if ((typeItem.UserData as ListBoxItemData).enabledState == false)
+                    ushort CurretType = targetTypeDictionary.ElementAt(i).Value;
+                    if (CurretType != 35)
                     {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                        MyTerminalControlListBoxItem typeItem = data.turret.targetTypesListItems.Find((x) => { return (x.UserData as ListBoxItemData).id == CurretType; });
+                        if ((typeItem.UserData as ListBoxItemData).enabledState == false)
+                        {
+                            targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                        }
                     }
                 }
-            }
 
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 2: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are friendly or are neutral should that be set appropriatly.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
-            {
-                ushort curretType = targetTypeDictionary.ElementAt(i).Value;
-
-                //Ignore non-cube types.
-                if (curretType != 31 && curretType != 32 && curretType != 33)
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 2: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are friendly or are neutral should that be set appropriatly.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
                 {
-                    if (curretType != 13)
-                    {
-                        //Check relation of blocks with ownership
-                        IMyCubeBlock cubeBlock = (IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key;
-                        MyRelationsBetweenPlayerAndBlock relation = cubeBlock.GetUserRelationToOwner((data.turret.Entity as IMyCubeBlock).OwnerId);
+                    ushort curretType = targetTypeDictionary.ElementAt(i).Value;
 
-                        if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                    var cubeEntity = (data.turret.Entity as IMyCubeBlock);
+                    if (cubeEntity != null)
+                    {
+                        if (curretType != 31 && curretType != 32 && curretType != 33)
+                        {
+
+                            if (curretType != 13)
+                            {
+                                //Check relation of blocks with ownership
+                                IMyCubeBlock cubeBlock = (IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key;
+                                MyRelationsBetweenPlayerAndBlock relation = cubeBlock.GetUserRelationToOwner(cubeEntity.OwnerId);
+
+                                if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                                {
+                                    targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                                }
+                            }
+                            else
+                            {
+                                //Check relation of blocks that cannot have ownership based on grid ownership
+                                IMyCubeGrid cubeGrid = (targetTypeDictionary.ElementAt(i).Key as IMyCubeBlock).CubeGrid;
+                                MyRelationsBetweenPlayerAndBlock relation = MyRelationsBetweenPlayerAndBlock.NoOwnership;
+
+                                if (cubeGrid.BigOwners.Count > 0)
+                                {
+                                    relation = cubeEntity.GetUserRelationToOwner(cubeGrid.BigOwners[0]);
+                                }
+
+                                if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                                {
+                                    targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                                }
+                            }
+                        }
+                        else if (curretType == 31) //Check relation of players
+                        {
+
+                            if (cubeEntity != null)
+                            {
+                                List<IMyPlayer> Players = new List<IMyPlayer>();
+                                MyAPIGateway.Players.GetPlayers(Players, (x) => { return x.Character.EntityId == targetTypeDictionary.ElementAt(i).Key.EntityId; });
+
+                                //IDK why this uses MyRelationsBetweenPlayerAndBlock when MyRelationsBetweenPlayers is a thing... KEEN!
+                                MyRelationsBetweenPlayerAndBlock relation = Players.First().GetRelationTo(cubeEntity.OwnerId);
+                                if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                                {
+                                    targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                                }
+                            }
+                        }
+                    }
+
+                    //Ignore non-cube types.
+                }
+
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 3: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are out of range.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
+                {
+                    ushort CurretType = targetTypeDictionary.ElementAt(i).Value;
+
+                    if (CurretType != 35)
+                    {
+                        if (checkTargetOutOfRange(turretLocation, data.turret.rangeStateDictionary[CurretType], targetTypeDictionary.ElementAt(i).Key.GetPosition()))
                         {
                             targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
                         }
                     }
                     else
                     {
-                        //Check relation of blocks that cannot have ownership based on grid ownership
-                        IMyCubeGrid cubeGrid = (targetTypeDictionary.ElementAt(i).Key as IMyCubeBlock).CubeGrid;
-                        MyRelationsBetweenPlayerAndBlock relation = MyRelationsBetweenPlayerAndBlock.NoOwnership;
-
-                        if (cubeGrid.BigOwners.Count > 0)
+                        var terminalEntity = data.turret.Entity as IMyTerminalBlock;
+                        if(terminalEntity != null)
                         {
-                            relation = (data.turret.Entity as IMyCubeBlock).GetUserRelationToOwner(cubeGrid.BigOwners[0]);
+                            if (checkTargetOutOfRange(turretLocation, getTurretMaxRange(terminalEntity), targetTypeDictionary.ElementAt(i).Key.GetPosition()))
+                            {
+                                targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                            }
                         }
+                        
+                    }
+                }
 
-                        if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 4: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are on the wrong type of grid.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
+                {
+                    ushort curretType = targetTypeDictionary.ElementAt(i).Value;
+
+                    //Ignore non-cube types and decoys.
+                    if (curretType != 31 && curretType != 32 && curretType != 33 && curretType != 35)
+                    {
+                        IMyCubeGrid grid = ((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).CubeGrid;
+                        bool targetLarge = data.turret.targetLargeGridsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
+                        bool targetSmall = data.turret.targetSmallGridsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
+                        bool targetStation = data.turret.targetStationsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
+
+                        if ((grid.GridSizeEnum == MyCubeSize.Large && targetLarge == false) || (grid.GridSizeEnum == MyCubeSize.Small && targetSmall == false) || (grid.IsStatic == true && targetStation == false))
                         {
                             targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
                         }
                     }
                 }
-                else if (curretType == 31) //Check relation of players
+
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 5: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are on grids that are too small.
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
                 {
-                    List<IMyPlayer> Players = new List<IMyPlayer>();
+                    ushort curretType = targetTypeDictionary.ElementAt(i).Value;
 
-                    MyAPIGateway.Players.GetPlayers(Players, (x) => { return x.Character.EntityId == targetTypeDictionary.ElementAt(i).Key.EntityId; });
+                    //Ignore non-cube types and decoys.
+                    if (curretType != 31 && curretType != 32 && curretType != 33 && curretType != 35)
+                    {
+                        List<IMySlimBlock> gridBlocks = new List<IMySlimBlock>();
+                        try
+                        {
+                            ((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).CubeGrid.GetBlocks(gridBlocks);
+                        }
+                        catch
+                        {
+                            //Problematic Enumeration error, stop targeting.
+                            data.validTargetID = null;
+                            return;
+                        }
 
-                    //IDK why this uses MyRelationsBetweenPlayerAndBlock when MyRelationsBetweenPlayers is a thing... KEEN!
-                    MyRelationsBetweenPlayerAndBlock relation = Players.First().GetRelationTo((data.turret.Entity as IMyCubeBlock).OwnerId);
+                        //MinGridSize
+                        if (gridBlocks.Count < data.turret.minimumGridSizeStateDictionary[targetTypeDictionary.ElementAt(i).Value])
+                        {
+                            targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
+                        }
+                    }
+                }
 
-                    if ((relation != MyRelationsBetweenPlayerAndBlock.Enemies && relation != MyRelationsBetweenPlayerAndBlock.Neutral) || ((relation == MyRelationsBetweenPlayerAndBlock.Neutral || relation == MyRelationsBetweenPlayerAndBlock.NoOwnership) && data.turret.targetNeutralsStateDictionary[targetTypeDictionary.ElementAt(i).Value] == false))
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 6: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Eliminate targets that are out of the turrets firing ark.
+                
+                for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
+                {
+                    if (isInFiringArk(data.turret, targetTypeDictionary.ElementAt(i).Key.GetPosition()) == false)
                     {
                         targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
                     }
                 }
-            }
 
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 3: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are out of range.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
+
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 7: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Sort targets by priority and distance.
+                List<IMyEntity> tempTargets = targetTypeDictionary.Keys.ToList();
+                if(data.turret.Entity != null)
+                {
+                    tempTargets.Sort(new SortByTargetingPriorityAndDistance(data.turret.Entity.GetPosition(), targetTypeDictionary, data.turret.targetTypesListItems));
+                }
+                
+
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 8");
+                //Update TargetTypeDictionary with new order.
+                targetTypeDictionary = getTargetTypeDictionary(tempTargets);
+
+                //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 9: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
+                //Start shooting rays.
+                //try
+                //{
+                data.validTargetID = castTargetingRay(targetTypeDictionary, data.turret);
+                    //}
+                    //catch (Exception err)
+                    //{
+                    //    log(err.Message);
+                    //    log(err.StackTrace);
+                    //}
+            }
+            catch(Exception e)
             {
-                ushort CurretType = targetTypeDictionary.ElementAt(i).Value;
-
-                if (CurretType != 35)
-                {
-                    if (checkTargetOutOfRange(turretLocation, data.turret.rangeStateDictionary[CurretType], targetTypeDictionary.ElementAt(i).Key.GetPosition()))
-                    {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
-                    }
-                }
-                else
-                {
-                    if (checkTargetOutOfRange(turretLocation, getTurretMaxRange(data.turret.Entity as IMyTerminalBlock), targetTypeDictionary.ElementAt(i).Key.GetPosition()))
-                    {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
-                    }
-                }
+                log(e.Message);
+                log(e.StackTrace);
             }
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 4: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are on the wrong type of grid.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
-            {
-                ushort curretType = targetTypeDictionary.ElementAt(i).Value;
-
-                //Ignore non-cube types and decoys.
-                if (curretType != 31 && curretType != 32 && curretType != 33 && curretType != 35)
-                {
-                    IMyCubeGrid grid = ((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).CubeGrid;
-                    bool targetLarge = data.turret.targetLargeGridsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
-                    bool targetSmall = data.turret.targetSmallGridsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
-                    bool targetStation = data.turret.targetStationsStateDictionary[targetTypeDictionary.ElementAt(i).Value];
-
-                    if ((grid.GridSizeEnum == MyCubeSize.Large && targetLarge == false) || (grid.GridSizeEnum == MyCubeSize.Small && targetSmall == false) || (grid.IsStatic == true && targetStation == false))
-                    {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
-                    }
-                }
-            }
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 5: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are on grids that are too small.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
-            {
-                ushort curretType = targetTypeDictionary.ElementAt(i).Value;
-
-                //Ignore non-cube types and decoys.
-                if (curretType != 31 && curretType != 32 && curretType != 33 && curretType != 35)
-                {
-                    List<IMySlimBlock> gridBlocks = new List<IMySlimBlock>();
-                    try
-                    {
-                        ((IMyCubeBlock)targetTypeDictionary.ElementAt(i).Key).CubeGrid.GetBlocks(gridBlocks);
-                    }
-                    catch
-                    {
-                        //Problematic Enumeration error, stop targeting.
-                        data.validTargetID = null;
-                        return;
-                    }
-
-                    //MinGridSize
-                    if (gridBlocks.Count < data.turret.minimumGridSizeStateDictionary[targetTypeDictionary.ElementAt(i).Value])
-                    {
-                        targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
-                    }
-                }
-            }
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 6: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Eliminate targets that are out of the turrets firing ark.
-            for (int i = targetTypeDictionary.Count - 1; i >= 0; i--)
-            {
-                if (isInFiringArk(data.turret, targetTypeDictionary.ElementAt(i).Key.GetPosition()) == false)
-                {
-                    targetTypeDictionary.Remove(targetTypeDictionary.ElementAt(i).Key);
-                }
-            }
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 7: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Sort targets by priority and distance.
-            List<IMyEntity> tempTargets = targetTypeDictionary.Keys.ToList();
-            tempTargets.Sort(new SortByTargetingPriorityAndDistance(data.turret.Entity.GetPosition(), targetTypeDictionary, data.turret.targetTypesListItems));
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 8");
-            //Update TargetTypeDictionary with new order.
-            targetTypeDictionary = getTargetTypeDictionary(tempTargets);
-
-            //log("Turret: " + data.turret.Entity.EntityId.ToString() + " 9: " + targetTypeDictionary.Count.ToString() + " : " + getTypes(targetTypeDictionary));
-            //Start shooting rays.
-            //try
-            //{
-            data.validTargetID = castTargetingRay(targetTypeDictionary, data.turret);
-            //}
-            //catch (Exception err)
-            //{
-            //    log(err.Message);
-            //    log(err.StackTrace);
-            //}
         }
 
         //Gets each entities associated type, represented by a ushort.
@@ -254,6 +279,9 @@ namespace Zkillerproxy.SmartTurretMod
         private static bool isInFiringArk(SmartTurret turret, Vector3D targetLocation)
         {
             IMyLargeTurretBase turretBase = turret.Entity as IMyLargeTurretBase;
+            if (turretBase == null)
+                return false;
+
             MyLargeTurretBaseDefinition turretDefinition = (MyDefinitionManager.Static.GetCubeBlockDefinition(turretBase.BlockDefinition) as MyLargeTurretBaseDefinition);
             int azimuthMin = turretDefinition.MinAzimuthDegrees;
             int azimuthMax = turretDefinition.MaxAzimuthDegrees;
@@ -290,6 +318,9 @@ namespace Zkillerproxy.SmartTurretMod
         private static long? castTargetingRay(Dictionary<IMyEntity, ushort> targetTypeDictionary, SmartTurret turret)
         {
             IMyEntity turretEntity = turret.Entity;
+            if (turretEntity == null)
+                return null;
+
             IMySlimBlock turretSlimBlock = (turretEntity as IMyCubeBlock).SlimBlock;
             IMyCubeGrid turretCubeGrid = turretSlimBlock.CubeGrid;
             Vector3D turretLocation = getTurretLocation(turretEntity);
