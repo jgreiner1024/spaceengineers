@@ -591,7 +591,7 @@ namespace Zkillerproxy.SmartTurretMod
                     if (switchControl.Title.String.StartsWith("BlockPropertyTitle_") && switchControl.Title.String != "BlockPropertyTitle_LargeTurretEnableTurretIdleMovement")
                     {
                         switchControl.Enabled = (TerminalTurret) => { SmartTurret Turret = getSmartTurret(TerminalTurret); if (Turret != null && Turret.smartTargetingSwitchState) { return false; } return true; };
-                        switchControl.UpdateVisual();
+                        MyAPIGateway.Utilities.InvokeOnGameThread(delegate { switchControl.UpdateVisual(); });
                     }
                 }
                 else if (terminalControls[i] is IMyTerminalControlSlider)
@@ -601,7 +601,7 @@ namespace Zkillerproxy.SmartTurretMod
                     if (sliderControl.Title.String == "BlockPropertyTitle_LargeTurretRadius")
                     {
                         sliderControl.Enabled = (TerminalTurret) => { SmartTurret Turret = getSmartTurret(TerminalTurret); if (Turret != null && Turret.smartTargetingSwitchState) { return false; } return true; };
-                        sliderControl.UpdateVisual();
+                        MyAPIGateway.Utilities.InvokeOnGameThread(delegate { sliderControl.UpdateVisual(); });
                     }
                 }
             }
@@ -779,7 +779,8 @@ namespace Zkillerproxy.SmartTurretMod
             {
                 if (control.Id.StartsWith("ST_") && (control is IMyTerminalControlListbox || control is IMyTerminalControlOnOffSwitch || control is IMyTerminalControlSlider || control is IMyTerminalControlTextbox))
                 {
-                    control.UpdateVisual();
+                    //fixes an issue where the update visual is called from multi-threading when dealing with creative mode clipboard
+                    MyAPIGateway.Utilities.InvokeOnGameThread(delegate { control.UpdateVisual(); });
                 }
             }
         }
