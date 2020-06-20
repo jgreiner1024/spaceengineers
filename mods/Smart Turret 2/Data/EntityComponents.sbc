@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<EntityComponents>
+		<EntityComponent xsi:type="MyObjectBuilder_ModStorageComponentDefinition">
+			<Id>
+				<TypeId>ModStorageComponent</TypeId>
+				<SubtypeId>SmartTurrets2</SubtypeId>
+			</Id>
+			<RegisteredStorageGuids>
+				<guid>608b9eeb-e108-4b32-a723-ea632296e4bf</guid>
+			</RegisteredStorageGuids>
+		</EntityComponent>
+	</EntityComponents>
+</Definitions>
