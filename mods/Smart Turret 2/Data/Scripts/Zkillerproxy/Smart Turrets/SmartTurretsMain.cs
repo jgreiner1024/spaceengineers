@@ -101,8 +101,7 @@ namespace Zkillerproxy.SmartTurretMod
                 if (targetID.HasValue && MyAPIGateway.Entities.EntityExists(targetID))
                 {
                     IMyEntity targetEntity = MyAPIGateway.Entities.GetEntityById(targetID);
-
-                    if (turretBase.HasTarget == false)
+                    if (turretBase.HasTarget == false && targetEntity != null)
                     {
                         turretBase.TrackTarget(targetEntity);
                     }

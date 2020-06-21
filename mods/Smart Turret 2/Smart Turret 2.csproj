@@ -95,7 +95,6 @@ if not exist "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\
   <PropertyGroup>
     <PostBuildEvent>copy "$(ProjectDir)*.mod" "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\*.mod"
 copy "$(ProjectDir)*.png" "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\*.png"
-copy "$(ProjectDir)*.xcf" "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\*.xcf"
 copy "$(ProjectDir)Data\*.sbc" "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\Data\*.sbc"
 copy "$(ProjectDir)Data\Scripts\Zkillerproxy\Smart Turrets\*.cs" "C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\Data\Scripts\\Zkillerproxy\Smart Turrets\*.cs"</PostBuildEvent>
   </PropertyGroup>
