@@ -9,10 +9,12 @@ using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
 
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Utils;
 using VRageMath;
+
 
 namespace xirathonxbox.spaceengineers.mods
 {
@@ -21,9 +23,8 @@ namespace xirathonxbox.spaceengineers.mods
     {
         const float densityMultiplier = 0.6f; //400 * 0.4 = 160; 
 
-        //track the current max output so when we change it, we don't trigger an infinite loop
-        private Dictionary<long, float> currentMaxOutput = new Dictionary<long, float>();
-        private Dictionary<long, float> currentAirDensity = new Dictionary<long, float>();
+        //track the solar panel data so when we change it, we don't trigger an infinite loop
+        private Dictionary<long, RealisticSolarPanelData> solarPanelData = new Dictionary<long, RealisticSolarPanelData>();
 
         public override void LoadData()
         {
@@ -55,27 +56,38 @@ namespace xirathonxbox.spaceengineers.mods
             if (entity is IMySolarPanel)
             {
                 IMySolarPanel solarPanel = entity as IMySolarPanel;
-
                 if (solarPanel == null || solarPanel.SourceComp == null)
                     return;
 
                 if (create == true)
                 {
+                    
                     //shouldn't happen, should always be new?
-                    if (currentMaxOutput.ContainsKey(solarPanel.EntityId) == false)
+                    if (solarPanelData.ContainsKey(solarPanel.EntityId) == false)
                     {
-                        currentMaxOutput.Add(solarPanel.EntityId, -1f);
+                        solarPanelData.Add(solarPanel.EntityId, new RealisticSolarPanelData() { 
+                            EntityId = solarPanel.EntityId,
+                            GridEntityId = solarPanel.CubeGrid.EntityId,
+                            CurrentAirDensity = null, 
+                            OriginalMaxOutput = 0f, 
+                            CurrentMaxOutput = 0f, 
+                            IsStatic = solarPanel.CubeGrid.IsStatic 
+                        });
                     }
+
                     solarPanel.SourceComp.MaxOutputChanged += SolarPanel_MaxOutputChanged;
+                    solarPanel.CubeGrid.OnIsStaticChanged += SolarPanelGrid_OnIsStaticChanged;
                 }
                 else
                 {
                     //shouldn't happen, should always exist
-                    if (currentMaxOutput.ContainsKey(solarPanel.EntityId) == true)
+                    if (solarPanelData.ContainsKey(solarPanel.EntityId) == true)
                     {
-                        currentMaxOutput.Remove(solarPanel.EntityId);
+                        solarPanelData.Remove(solarPanel.EntityId);
                     }
+                    
                     solarPanel.SourceComp.MaxOutputChanged -= SolarPanel_MaxOutputChanged;
+                    solarPanel.CubeGrid.OnIsStaticChanged -= SolarPanelGrid_OnIsStaticChanged;
                 }
 
                 if (entity is IMyTerminalBlock)
@@ -86,18 +98,10 @@ namespace xirathonxbox.spaceengineers.mods
 
                     if (create == true)
                     {
-                        if (currentAirDensity.ContainsKey(solarPanelTerminal.EntityId) == false)
-                        {
-                            currentAirDensity.Add(solarPanelTerminal.EntityId, 1f);
-                        }
                         solarPanelTerminal.AppendingCustomInfo += SolarPanelTerminal_AppendingCustomInfo;
                     }
                     else
                     {
-                        if (currentAirDensity.ContainsKey(solarPanelTerminal.EntityId) == true)
-                        {
-                            currentAirDensity.Remove(solarPanelTerminal.EntityId);
-                        }
                         solarPanelTerminal.AppendingCustomInfo -= SolarPanelTerminal_AppendingCustomInfo;
                     }
                 }
@@ -106,69 +110,127 @@ namespace xirathonxbox.spaceengineers.mods
 
         }
 
+        private void SolarPanelGrid_OnIsStaticChanged(IMyCubeGrid grid, bool isStatic)
+        {
+            //find all solar panels that belong to this grid
+            foreach(var data in solarPanelData.Values)
+            {
+                if(data.GridEntityId == grid.EntityId)
+                {
+                    data.IsStatic = isStatic;
+                }
+            }
+        }
+
+        private void UpdatePower(IMySolarPanel solarPanel, RealisticSolarPanelData data = null)
+        {
+            if (solarPanel == null)
+                return;
+
+            if(data == null)
+            {
+                if (solarPanelData.ContainsKey(solarPanel.EntityId) == false)
+                    return;
+
+                data = solarPanelData[solarPanel.EntityId];
+            }
+
+            float airDensity = data.CurrentAirDensity != null ? data.CurrentAirDensity.Value : 1f;
+            float modifier = 1f - (densityMultiplier * airDensity);
+            if (modifier < 0f)
+                modifier = 0f;
+
+            float currentOutput = data.OriginalMaxOutput * modifier;
+
+            //only set it if our calculated max output changed
+            if(currentOutput != data.CurrentMaxOutput)
+            {
+                data.CurrentMaxOutput = currentOutput;
+                solarPanel.SourceComp.SetMaxOutput(data.CurrentMaxOutput);
+            }
+        }
+
+
         private void SolarPanelTerminal_AppendingCustomInfo(IMyTerminalBlock terminalBlock, StringBuilder terminalStringBuilder)
         {
             float airDensity = 0f;
-            if (currentAirDensity.ContainsKey(terminalBlock.EntityId) == true)
+            if (solarPanelData.ContainsKey(terminalBlock.EntityId) == true)
             {
-                airDensity = currentAirDensity[terminalBlock.EntityId];
+                var data = solarPanelData[terminalBlock.EntityId];
+                airDensity = data.CurrentAirDensity != null ? data.CurrentAirDensity.Value : 1f;
             }
+
             terminalStringBuilder.AppendLine($"Air Density: {Math.Floor(100f * airDensity)}%");
         }
 
         private void SolarPanel_MaxOutputChanged(MyDefinitionId changedResourceId, float oldOutput, MyResourceSourceComponent source)
         {
             //is this possible?
-            if (source.Entity == null)
+            if (source?.Entity == null)
                 return;
 
             //shouldn't happen, should always exist from the OnEntityCreate
-            if (currentMaxOutput.ContainsKey(source.Entity.EntityId) == false)
+            if (solarPanelData.ContainsKey(source.Entity.EntityId) == false)
                 return;
 
-            float maxOutput = source.MaxOutput;
-            float currentOutput = currentMaxOutput[source.Entity.EntityId];
+            var data = solarPanelData[source.Entity.EntityId];
 
-            //prevent infinite looping
-            if (maxOutput == currentOutput)
+            //if the max output matches our current max output, or our original max output don't do anything
+            if (data.CurrentMaxOutput == source.MaxOutput || data.OriginalMaxOutput == source.MaxOutput)
                 return;
 
-            float airDensity = 0f;
-            Vector3D entityPosition = source.Entity.GetPosition();
-            MyPlanet closestPlanet = MyGamePruningStructure.GetClosestPlanet(entityPosition);
-            if (closestPlanet == null || closestPlanet.PositionComp.WorldAABB.Contains(entityPosition) == ContainmentType.Disjoint)
-            {
-                airDensity = 0f;
-            }
-            else
-            {
-                airDensity = closestPlanet.GetAirDensity(entityPosition);
-            }
+            IMyTerminalBlock terminalEntity = source.Entity as IMyTerminalBlock;
+            if (terminalEntity == null)
+                return;
 
-            //shouldn't happen
-            if (currentAirDensity.ContainsKey(source.Entity.EntityId) == false)
+            //set our new original max output then recalculate            
+            solarPanelData[source.Entity.EntityId].OriginalMaxOutput = source.MaxOutput;
+
+
+            //did we change grids?
+            if (terminalEntity.CubeGrid.EntityId != data.GridEntityId)
             {
-                currentAirDensity.Add(source.Entity.EntityId, airDensity);
-            }
-            else
-            {
-                currentAirDensity[source.Entity.EntityId] = airDensity;
+                //check if we're static again
+                data.IsStatic = terminalEntity.CubeGrid.IsStatic;
+
+                //force a re-calculation of air density
+                data.CurrentAirDensity = null;
             }
 
-            float modifier = 1f - (densityMultiplier * airDensity);
-            if (modifier < 0f)
-                modifier = 0f;
-
-            currentOutput = maxOutput * modifier;
-            currentMaxOutput[source.Entity.EntityId] = currentOutput;
-            source.SetMaxOutputByType(changedResourceId, currentOutput);
-
-            if (source.Entity is IMyTerminalBlock)
+            if (data.CurrentAirDensity == null || data.IsStatic == false)
             {
-                IMyTerminalBlock terminalEntity = (IMyTerminalBlock)source.Entity;
-                terminalEntity.RefreshCustomInfo();
+                var entityPosition = terminalEntity.GetPosition();
+                float airDensity = 0f;
+                MyPlanet closestPlanet = MyGamePruningStructure.GetClosestPlanet(entityPosition);
+                if (closestPlanet == null || closestPlanet.PositionComp.WorldAABB.Contains(entityPosition) == ContainmentType.Disjoint)
+                {
+                    airDensity = 0f;
+                }
+                else
+                {
+                    airDensity = closestPlanet.GetAirDensity(entityPosition);
+
+                }
+
+                if (data.CurrentAirDensity != airDensity)
+                {
+                    data.CurrentAirDensity = airDensity;
+                    terminalEntity.RefreshCustomInfo();
+                }
             }
 
+            //update
+            UpdatePower(source.Entity as IMySolarPanel, data);
         }
+    }
+
+    public class RealisticSolarPanelData
+    {
+        public long EntityId;
+        public float CurrentMaxOutput;
+        public float OriginalMaxOutput;
+        public float? CurrentAirDensity;
+        public long GridEntityId;
+        public bool IsStatic;
     }
 }
