@@ -20,6 +20,7 @@ namespace Zkillerproxy.SmartTurretMod
 
         protected override void UnloadData()
         {
+            SmartTurretsProfiler.Instance.LogStats();
             if (MyAPIGateway.Session.IsServer)
             {
                 MyAPIGateway.Multiplayer.UnregisterMessageHandler(settingsReportSend, handleSettingsReportSend);
@@ -29,6 +30,8 @@ namespace Zkillerproxy.SmartTurretMod
         //Handle staggered turret updates
         public override void UpdateBeforeSimulation()
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("SyncUpdateBeforeSimulation");
+
             int numToUpdate = (int)Math.Ceiling((SmartTurret.targetingWaitingList.Count / 60f));
             
             for (int i = 0; i < numToUpdate; i++)
@@ -54,13 +57,16 @@ namespace Zkillerproxy.SmartTurretMod
                     SmartTurret.targetingWaitingList.Remove(SmartTurret.targetingWaitingList[i]);
                 }
             }
+            SmartTurretsProfiler.Instance.Stop(profilerId);
         }
 
         private void handleSettingsReportSend(byte[] data)
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("handleSettingsReportSend");
             handleSettingsRecieve(data);
 
             MyAPIGateway.Multiplayer.SendMessageToOthers(settingsReportRecieve, data);
+            SmartTurretsProfiler.Instance.Stop(profilerId);
         }
     }
 
@@ -85,7 +91,10 @@ namespace Zkillerproxy.SmartTurretMod
 
         private void handleSettingsReportRecieve(byte[] data)
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("handleSettingsReportRecieve");
             handleSettingsRecieve(data);
+            SmartTurretsProfiler.Instance.Stop(profilerId);
+
         }
     }
 }

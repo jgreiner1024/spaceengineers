@@ -68,13 +68,18 @@ namespace Zkillerproxy.SmartTurretMod
         //Other Variables
         static bool controlsAdded = false;
         long? targetID = null;
-        bool isOtherThreadRunning = false;
+        bool isValidateTargetsThreadRunning = false;
+        bool isCollectTargetsThreadRunning = false;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             //Load and Setup
             loadTurretData(Entity);
             setupTerminalVariables();
+
+            //TODO: redo this process 
+            //call this once to cache the max range during init
+            getTurretMaxRange(Entity as IMyTerminalBlock);
 
             //Add controls on init, and only once.
             if (controlsAdded == false)
@@ -93,6 +98,7 @@ namespace Zkillerproxy.SmartTurretMod
         //Shoot if there is a target.
         public override void UpdateBeforeSimulation()
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("UpdateBeforeSimulation");
             if (MyAPIGateway.Session.IsServer && smartTargetingSwitchState && (Entity as IMyTerminalBlock).IsWorking)
             {
                 //Fire control
@@ -127,6 +133,7 @@ namespace Zkillerproxy.SmartTurretMod
                     targetingWaitingList.Add(Entity);
                 }
             }
+            SmartTurretsProfiler.Instance.Stop(profilerId);
         }
 
         //Clean up when the turret is removed.
@@ -134,76 +141,124 @@ namespace Zkillerproxy.SmartTurretMod
         {
             //Unbind ControlModifier for this turret.
             MyAPIGateway.TerminalControls.CustomControlGetter -= controlModifier;
+
+            //log out profiler data
         }
 
         //START OF TARGETING. Targeting thread is initiated here.
         private void startTargeting()
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("startTargeting");
+
             if (smartTargetingSwitchState == true && (Entity as IMyTerminalBlock).IsWorking)
             {
-                if (isOtherThreadRunning == false)
+                if (isValidateTargetsThreadRunning == false)
                 {
                     //Start check for target valididity on curret target (so we know if a new target is needed), if there isn't a target find a new one.
                     if (MyAPIGateway.Entities.EntityExists(targetID))
                     {
+                        Guid profilerId1 = SmartTurretsProfiler.Instance.Start("startTargeting_1");
+
                         TargetingData data = new TargetingData(
                             this,
                             new List<IMyEntity>() { MyAPIGateway.Entities.GetEntityById(targetID) }
                             );
 
-                        MyAPIGateway.Parallel.StartBackground(validateTargets, validateTargetsCallback, data);
-                        isOtherThreadRunning = true;
+                        validateTargets(data);
+
+                        //MyAPIGateway.Parallel.StartBackground(validateTargets, validateTargetsCallback, data);
+                        
+                        SmartTurretsProfiler.Instance.Stop(profilerId1);
                     }
                     else
                     {
-                        BoundingSphereD turretRangeSphere = new BoundingSphereD(Entity.GetPosition(), getTurretMaxRange(Entity as IMyTerminalBlock) + 1000);
-                        List<IMyEntity> entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref turretRangeSphere);
-                        List<IMyEntity> targetCandidates = new List<IMyEntity>();
+                        Guid profilerId2 = SmartTurretsProfiler.Instance.Start("startTargeting_2");
 
-
-                        foreach (IMyEntity entity in entities)
+                        CollectingData data = new CollectingData()
                         {
-                            if (entity is IMyCubeGrid)
-                            {
-                                List<IMySlimBlock> blocks = new List<IMySlimBlock>();
-                                List<IMyEntity> cubeBlocks = new List<IMyEntity>();
-                                (entity as IMyCubeGrid).GetBlocks(blocks, (x) => { return x.FatBlock != null; });
+                            EntityId = Entity.EntityId,
+                            Position = Entity.GetPosition(),
+                            MaxRange = getTurretMaxRange(Entity as IMyTerminalBlock)
+                        };
 
-                                foreach (IMySlimBlock block in blocks)
-                                {
-                                    cubeBlocks.Add(block.FatBlock);
-                                }
+                        collectTargets(data);
+                        //Entity.GetPosition()
+                        //BoundingSphereD turretRangeSphere = new BoundingSphereD(Entity.GetPosition(), getTurretMaxRange(Entity as IMyTerminalBlock) + 1000);
+                        //List<IMyEntity> entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref turretRangeSphere);
+                        //List<IMyEntity> targetCandidates = new List<IMyEntity>();
 
-                                targetCandidates.AddList(cubeBlocks);
-                            }
-                            else if (entity is IMyCharacter || entity is IMyMeteor)
-                            {
-                                targetCandidates.Add(entity);
-                            }
-                        }
 
-                        targetCandidates.RemoveAll((x) => { return x.EntityId == Entity.EntityId; });
+                        //foreach (IMyEntity entity in entities)
+                        //{
+                        //    if (entity is IMyCubeGrid)
+                        //    {
+                        //        List<IMySlimBlock> blocks = new List<IMySlimBlock>();
+                        //        List<IMyEntity> cubeBlocks = new List<IMyEntity>();
+                        //        (entity as IMyCubeGrid).GetBlocks(blocks, (x) => { return x.FatBlock != null; });
 
-                        TargetingData data = new TargetingData(
-                            this,
-                            targetCandidates
-                            );
+                        //        foreach (IMySlimBlock block in blocks)
+                        //        {
+                        //            cubeBlocks.Add(block.FatBlock);
+                        //        }
 
-                        MyAPIGateway.Parallel.StartBackground(validateTargets, validateTargetsCallback, data);
-                        isOtherThreadRunning = true;
+                        //        targetCandidates.AddList(cubeBlocks);
+                        //    }
+                        //    else if (entity is IMyCharacter || entity is IMyMeteor)
+                        //    {
+                        //        targetCandidates.Add(entity);
+                        //    }
+                        //}
+
+                        //targetCandidates.RemoveAll((x) => { return x.EntityId == Entity.EntityId; });
+
+                        //TargetingData data = new TargetingData(
+                        //    this,
+                        //    targetCandidates
+                        //    );
+
+                        SmartTurretsProfiler.Instance.Stop(profilerId2);
                     }
                 }
             }
+
+            SmartTurretsProfiler.Instance.Stop(profilerId);
+        }
+
+        private void collectTargets(CollectingData data)
+        {
+            if (isCollectTargetsThreadRunning == true)
+                return;
+
+            isCollectTargetsThreadRunning = true;
+            MyAPIGateway.Parallel.StartBackground(collectTargetsThread, collectTargetsComplete, data);
+        }
+
+        private void collectTargetsComplete(WorkData workData)
+        {
+            isCollectTargetsThreadRunning = false;
+
+            CollectingData data = (CollectingData)workData;
+            TargetingData targetingData = new TargetingData(this, data.Candidates);
+            validateTargets(targetingData);
+        }
+
+        private void validateTargets(TargetingData data)
+        {
+            if (isValidateTargetsThreadRunning == true)
+                return;
+
+            isValidateTargetsThreadRunning = true;
+            MyAPIGateway.Parallel.StartBackground(validateTargetsThread, validateTargetsComplete, data);
         }
 
         //END OF TARGETING. Callback for target validation.
-        private void validateTargetsCallback(WorkData data)
+        private void validateTargetsComplete(WorkData data)
         {
+            isValidateTargetsThreadRunning = false;
+
             if (Entity != null)
             {
-                //log("Turret: " + Entity.EntityId.ToString() + " Target: " + (data as TargetingData).validTargetID.ToString());
                 targetID = (data as TargetingData).validTargetID;
-                isOtherThreadRunning = false;
             }
         }
 

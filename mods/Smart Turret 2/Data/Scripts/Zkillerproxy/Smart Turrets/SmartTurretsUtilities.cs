@@ -667,9 +667,16 @@ namespace Zkillerproxy.SmartTurretMod
             }
         }
 
+        //TODO:hack needs to be moved
+        static float? maxRange = null;
         public static float getTurretMaxRange(IMyTerminalBlock terminalTurret)
         {
-            return (MyDefinitionManager.Static.GetCubeBlockDefinition((terminalTurret as IMyLargeTurretBase).BlockDefinition) as MyLargeTurretBaseDefinition).MaxRangeMeters;
+            //TODO: this should be cached
+            if(maxRange == null)
+            {
+                maxRange = (MyDefinitionManager.Static.GetCubeBlockDefinition((terminalTurret as IMyLargeTurretBase).BlockDefinition) as MyLargeTurretBaseDefinition).MaxRangeMeters;
+            }
+            return maxRange.Value;
         }
 
         public static void handleSettingsRecieve(byte[] data)

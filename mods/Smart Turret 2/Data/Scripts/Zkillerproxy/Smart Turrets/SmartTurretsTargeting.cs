@@ -18,8 +18,9 @@ namespace Zkillerproxy.SmartTurretMod
     public static class SmartTurretTargetingUtilities
     {
         //MAIN TARGETING. The main targeting method, only to be run on other threads because this is laggy af.
-        public static void validateTargets(WorkData tempData)
+        public static void validateTargetsThread(WorkData tempData)
         {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("validateTargetsThread");
             try
             {
                 TargetingData data = (TargetingData)tempData;
@@ -237,7 +238,48 @@ namespace Zkillerproxy.SmartTurretMod
                 log(e.Message);
                 log(e.StackTrace);
             }
+
+            SmartTurretsProfiler.Instance.Stop(profilerId);
         }
+
+        public static void collectTargetsThread(WorkData workData)
+        {
+            Guid profilerId = SmartTurretsProfiler.Instance.Start("collectTargetsThread");
+
+            CollectingData data = (CollectingData)workData;
+
+            BoundingSphereD turretRangeSphere = new BoundingSphereD(data.Position, data.MaxRange + 1000);
+            List<IMyEntity> entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref turretRangeSphere);
+            List<IMyEntity> targetCandidates = new List<IMyEntity>();
+
+
+            foreach (IMyEntity entity in entities)
+            {
+                if (entity is IMyCubeGrid)
+                {
+                    List<IMySlimBlock> blocks = new List<IMySlimBlock>();
+                    List<IMyEntity> cubeBlocks = new List<IMyEntity>();
+                    (entity as IMyCubeGrid).GetBlocks(blocks, (x) => { return x.FatBlock != null; });
+
+                    foreach (IMySlimBlock block in blocks)
+                    {
+                        cubeBlocks.Add(block.FatBlock);
+                    }
+
+                    targetCandidates.AddList(cubeBlocks);
+                }
+                else if (entity is IMyCharacter || entity is IMyMeteor)
+                {
+                    targetCandidates.Add(entity);
+                }
+            }
+
+            targetCandidates.RemoveAll((x) => { return x.EntityId == data.EntityId; });
+            data.Candidates = targetCandidates;
+
+            SmartTurretsProfiler.Instance.Stop(profilerId);
+        }
+
 
         //Gets each entities associated type, represented by a ushort.
         private static Dictionary<IMyEntity, ushort> getTargetTypeDictionary(List<IMyEntity> targets)
@@ -709,6 +751,15 @@ namespace Zkillerproxy.SmartTurretMod
         {
             this.validTargetID = validTargetID;
         }
+    }
+
+    public class CollectingData : WorkData
+    {
+        public long EntityId;
+        public Vector3D Position;
+        public float MaxRange;
+        public List<IMyEntity> Candidates;
+
     }
 
     //Comparator for target priority

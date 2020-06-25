@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Scripts\Zkillerproxy\Smart Turrets\SmartTurretsMain.cs" />
+    <Compile Include="Data\Scripts\Zkillerproxy\Smart Turrets\SmartTurretsProfiler.cs" />
     <Compile Include="Data\Scripts\Zkillerproxy\Smart Turrets\SmartTurretsSaveData.cs" />
     <Compile Include="Data\Scripts\Zkillerproxy\Smart Turrets\SmartTurretsSync.cs" />
     <Compile Include="Data\Scripts\Zkillerproxy\Smart Turrets\SmartTurretsTargeting.cs" />
