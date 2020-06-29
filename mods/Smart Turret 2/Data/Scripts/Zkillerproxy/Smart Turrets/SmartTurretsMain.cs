@@ -87,6 +87,7 @@ namespace Zkillerproxy.SmartTurretMod
                 controlsAdded = true;
                 addTerminalControls();
             }
+            
 
             //Bind ControlModifier for this turret.
             MyAPIGateway.TerminalControls.CustomControlGetter += controlModifier;
@@ -238,8 +239,12 @@ namespace Zkillerproxy.SmartTurretMod
             isCollectTargetsThreadRunning = false;
 
             CollectingData data = (CollectingData)workData;
-            TargetingData targetingData = new TargetingData(this, data.Candidates);
-            validateTargets(targetingData);
+            if(data?.Candidates != null && data.Candidates.Count > 0)
+            {
+                TargetingData targetingData = new TargetingData(this, data.Candidates);
+                validateTargets(targetingData);
+            }
+            
         }
 
         private void validateTargets(TargetingData data)

@@ -245,38 +245,39 @@ namespace Zkillerproxy.SmartTurretMod
         public static void collectTargetsThread(WorkData workData)
         {
             Guid profilerId = SmartTurretsProfiler.Instance.Start("collectTargetsThread");
-
-            CollectingData data = (CollectingData)workData;
-
-            BoundingSphereD turretRangeSphere = new BoundingSphereD(data.Position, data.MaxRange + 1000);
-            List<IMyEntity> entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref turretRangeSphere);
-            List<IMyEntity> targetCandidates = new List<IMyEntity>();
-
-
-            foreach (IMyEntity entity in entities)
+            try
             {
-                if (entity is IMyCubeGrid)
-                {
-                    List<IMySlimBlock> blocks = new List<IMySlimBlock>();
-                    List<IMyEntity> cubeBlocks = new List<IMyEntity>();
-                    (entity as IMyCubeGrid).GetBlocks(blocks, (x) => { return x.FatBlock != null; });
+                CollectingData data = (CollectingData)workData;
 
-                    foreach (IMySlimBlock block in blocks)
+                BoundingSphereD turretRangeSphere = new BoundingSphereD(data.Position, data.MaxRange + 1000);
+                List<IMyEntity> entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref turretRangeSphere);
+                List<IMyEntity> targetCandidates = new List<IMyEntity>();
+                foreach (IMyEntity entity in entities)
+                {
+                    if (entity is IMyCubeGrid)
                     {
-                        cubeBlocks.Add(block.FatBlock);
+                        List<IMySlimBlock> blocks = new List<IMySlimBlock>();
+                        List<IMyEntity> cubeBlocks = new List<IMyEntity>();
+                        (entity as IMyCubeGrid).GetBlocks(blocks, (x) => { return x.FatBlock != null; });
+                        foreach (IMySlimBlock block in blocks)
+                        {
+                            cubeBlocks.Add(block.FatBlock);
+                        }
+                        targetCandidates.AddList(cubeBlocks);
                     }
-
-                    targetCandidates.AddList(cubeBlocks);
+                    else if (entity is IMyCharacter || entity is IMyMeteor)
+                    {
+                        targetCandidates.Add(entity);
+                    }
                 }
-                else if (entity is IMyCharacter || entity is IMyMeteor)
-                {
-                    targetCandidates.Add(entity);
-                }
+                targetCandidates.RemoveAll((x) => { return x.EntityId == data.EntityId; });
+                data.Candidates = targetCandidates;
             }
-
-            targetCandidates.RemoveAll((x) => { return x.EntityId == data.EntityId; });
-            data.Candidates = targetCandidates;
-
+            catch (Exception e)
+            {
+                log(e.Message);
+                log(e.StackTrace);
+            }
             SmartTurretsProfiler.Instance.Stop(profilerId);
         }
 
