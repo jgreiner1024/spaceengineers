@@ -108,10 +108,23 @@ namespace Zkillerproxy.SmartTurretMod
                 if (targetID.HasValue && MyAPIGateway.Entities.EntityExists(targetID))
                 {
                     IMyEntity targetEntity = MyAPIGateway.Entities.GetEntityById(targetID);
-                    if (turretBase.HasTarget == false && targetEntity != null)
+                    try
                     {
-                        turretBase.TrackTarget(targetEntity);
+                        //sometimes we get a null reference exception deep in the SE code from calling this
+                        //I believe it's due to the entity existing at this point, but being garbage collected to null 
+                        //before the track target operations is completed due to jumping threads to the main thread. 
+                        if (turretBase.HasTarget == false && targetEntity != null)
+                        {
+                            turretBase.TrackTarget(targetEntity);
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        MyLog.Default.WriteLine("Exception in track target");
+                        MyLog.Default.WriteLine(ex.Message);
+                        MyLog.Default.WriteLine($"is target entity null? {targetEntity == null}");
+                    }
+                    
                 }
                 else
                 {
