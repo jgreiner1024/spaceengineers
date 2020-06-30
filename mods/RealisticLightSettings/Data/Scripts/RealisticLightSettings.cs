@@ -83,7 +83,9 @@ namespace RealisticLightSettings.Data.Scripts
                 if (terminalLight == null)
                     return;
 
-                RealisticLightSettings lightSettings = terminalLight?.GameLogic as RealisticLightSettings;
+                 
+
+                RealisticLightSettings lightSettings = terminalLight?.GameLogic.GetAs<RealisticLightSettings>();
                 if (lightSettings == null)
                     return;
 
