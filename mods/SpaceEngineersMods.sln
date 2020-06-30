@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Smart Turret 2", "Smart Tur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticImprovedSolarPanelForTTB", "RealisticImprovedSolarPanelForTTB\RealisticImprovedSolarPanelForTTB.csproj", "{1EE90282-C088-4FC1-BBDE-E902CBFD81C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnergySignatureTest", "EnergySignatureTest\EnergySignatureTest.csproj", "{4071BC6F-AF22-426F-BDB6-743067A35237}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealisticTurretAI", "RealisticTurretAI\RealisticTurretAI.csproj", "{3599FDBD-A7FE-4701-963A-63DA41F60C3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{1EE90282-C088-4FC1-BBDE-E902CBFD81C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1EE90282-C088-4FC1-BBDE-E902CBFD81C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1EE90282-C088-4FC1-BBDE-E902CBFD81C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4071BC6F-AF22-426F-BDB6-743067A35237}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4071BC6F-AF22-426F-BDB6-743067A35237}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4071BC6F-AF22-426F-BDB6-743067A35237}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4071BC6F-AF22-426F-BDB6-743067A35237}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3599FDBD-A7FE-4701-963A-63DA41F60C3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3599FDBD-A7FE-4701-963A-63DA41F60C3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3599FDBD-A7FE-4701-963A-63DA41F60C3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3599FDBD-A7FE-4701-963A-63DA41F60C3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
