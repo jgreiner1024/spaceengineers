@@ -51,7 +51,7 @@ namespace xirathonxbox.spaceengineers.mods
         {
             get
             {
-                return this.POIType == EnergySignatureType.Ore && this.Distance < 200.0 || this.m_alwaysVisible;
+                return this.m_alwaysVisible;
             }
             set
             {
@@ -63,14 +63,14 @@ namespace xirathonxbox.spaceengineers.mods
         {
             get
             {
-                return !this.AlwaysVisible && this.POIType != EnergySignatureType.Target && (this.POIType != EnergySignatureType.Ore || this.Distance >= 200.0);
+                return !this.AlwaysVisible;
             }
         }
 
         public EnergySignature()
         {
             this.WorldPosition = Vector3D.Zero;
-            this.POIType = EnergySignatureType.Unknown;
+            this.POIType = EnergySignatureType.Single;
             this.Relationship = MyRelationsBetweenPlayerAndBlock.Owner;
             this.Text = new StringBuilder(64, 64);
         }
@@ -83,7 +83,7 @@ namespace xirathonxbox.spaceengineers.mods
         public void Reset()
         {
             this.WorldPosition = Vector3D.Zero;
-            this.POIType = EnergySignatureType.Unknown;
+            this.POIType = EnergySignatureType.Single;
             this.Relationship = MyRelationsBetweenPlayerAndBlock.Owner;
             this.Entity = null;
             this.Text.Clear();
@@ -91,7 +91,7 @@ namespace xirathonxbox.spaceengineers.mods
             this.Distance = 0.0;
             this.DistanceToCam = 0.0;
             this.AlwaysVisible = false;
-            this.ContainerRemainingTime = (string)null;
+            this.ContainerRemainingTime = null;
         }
 
         public void SetState(Vector3D position, EnergySignatureType type, MyRelationsBetweenPlayerAndBlock relationship)
@@ -214,14 +214,9 @@ namespace xirathonxbox.spaceengineers.mods
             font = "White";
             switch (this.POIType)
             {
-                case EnergySignatureType.Unknown:
-                    poiColor = Color.White;
-                    font = "White";
-                    fontColor = Color.White;
-                    break;
                 case EnergySignatureType.Group:
                     bool flag = true;
-                    EnergySignatureType pointOfInterestType = EnergySignatureType.Unknown;
+                    EnergySignatureType pointOfInterestType = EnergySignatureType.Single;
                     if (this.m_group.Count > 0)
                     {
                         this.m_group[0].GetPOIColorAndFontInformation(out poiColor, out fontColor, out font);
@@ -238,27 +233,6 @@ namespace xirathonxbox.spaceengineers.mods
                     if (flag)
                         break;
                     this.GetColorAndFontForRelationship(this.GetGroupRelation(), out poiColor, out fontColor, out font);
-                    break;
-                case EnergySignatureType.Ore:
-                    poiColor = Color.Khaki;
-                    font = "White";
-                    fontColor = Color.Khaki;
-                    break;
-                case EnergySignatureType.GPS:
-                case EnergySignatureType.ContractGPS:
-                    poiColor = this.DefaultColor;
-                    fontColor = this.DefaultColor;
-                    font = "Blue";
-                    break;
-                case EnergySignatureType.Objective:
-                    poiColor = this.DefaultColor * 1.3f;
-                    fontColor = this.DefaultColor * 1.3f;
-                    font = "Blue";
-                    break;
-                case EnergySignatureType.Scenario:
-                    poiColor = Color.DarkOrange;
-                    fontColor = Color.DarkOrange;
-                    font = "White";
                     break;
                 default:
                     this.GetColorAndFontForRelationship(this.Relationship, out poiColor, out fontColor, out font);
@@ -313,8 +287,6 @@ namespace xirathonxbox.spaceengineers.mods
             float num2 = 0.04f;
             if ((double)vector2_2.X < (double)num2 || (double)vector2_2.X > (double)hudSize.X - (double)num2 || ((double)vector2_2.Y < (double)num2 || (double)vector2_2.Y > (double)hudSize.Y - (double)num2) || vector3D.Z > 0.0)
             {
-                if (this.POIType == EnergySignatureType.Target)
-                    return;
                 Vector2 vector2_3 = Vector2.Normalize(upVector);
                 Vector2 position = hudSizeHalf + hudSizeHalf * vector2_3 * 0.77f;
                 upVector = position - hudSizeHalf;
@@ -329,11 +301,6 @@ namespace xirathonxbox.spaceengineers.mods
             else
             {
                 float num3 = scale * 0.006667f / num1 / num1;
-                if (this.POIType == EnergySignatureType.Target)
-                {
-                    renderer.AddTexturedQuad("HudAtlas0.dds_TargetTurret", vector2_2, -Vector2.UnitY, Color.White, num3, num3);
-                    return;
-                }
                 if (drawBox)
                     renderer.AddTexturedQuad("HudAtlas0.dds_Target_neutral", vector2_2, -Vector2.UnitY, white1, num3, num3);
             }
@@ -481,10 +448,8 @@ namespace xirathonxbox.spaceengineers.mods
                                 EnergySignature poi = pointOfInterestList[0];
                                 if (poi != null)
                                 {
-                                    if (poi.POIType == EnergySignatureType.ContractGPS)
-                                        poi.GetPOIColorAndFontInformation(out white1, out fontColor, out font);
-                                    else
-                                        this.GetColorAndFontForRelationship(index2, out white1, out fontColor, out font);
+                                    
+                                    this.GetColorAndFontForRelationship(index2, out white1, out fontColor, out font);
                                     float amount = num9 == 0 ? 1f : num8;
                                     if (num9 >= 2)
                                         amount = 0.0f;
@@ -542,15 +507,12 @@ namespace xirathonxbox.spaceengineers.mods
                                         EnergySignature poi = pointOfInterestList[index2];
                                         if (poi != null)
                                         {
-                                            if (poi.POIType == EnergySignatureType.Scenario || poi.POIType == EnergySignatureType.ContractGPS || poi.POIType == EnergySignatureType.Ore)
-                                                poi.GetPOIColorAndFontInformation(out white1, out fontColor, out font);
-                                            else
-                                                this.GetColorAndFontForRelationship(key, out white1, out fontColor, out font);
+                                            this.GetColorAndFontForRelationship(key, out white1, out fontColor, out font);
                                             float amount = num9 == 0 ? 1f : num8;
                                             if (num9 >= 2)
                                                 amount = 0.0f;
                                             Vector2 vector2_3 = Vector2.Lerp(vector2Array1[index1], vector2Array2[index1], amount);
-                                            string centerIconSprite = poi.POIType != EnergySignatureType.Scenario ? EnergySignature.GetIconForRelationship(key) : "Textures\\HUD\\marker_scenario.dds";
+                                            string centerIconSprite = EnergySignature.GetIconForRelationship(key);
                                             white1.A = (byte)((double)alphaMultiplierMarker * (double)white1.A);
                                             EnergySignature.DrawIcon(renderer, centerIconSprite, vector2_2 + vector2_3, white1, 0.75f / num1);
                                             if (this.ShouldDrawHighAlertMark(poi))
@@ -669,8 +631,7 @@ namespace xirathonxbox.spaceengineers.mods
         {
             if (poi.Relationship == MyRelationsBetweenPlayerAndBlock.Neutral)
                 return false;
-            if (poi.POIType == EnergySignatureType.Scenario)
-                return true;
+            
             foreach (EnergySignature pointOfInterest in this.m_group)
             {
                 if (this.IsRelationHostile(poi.Relationship, pointOfInterest.Relationship) && (double)((Vector3)(pointOfInterest.WorldPosition - poi.WorldPosition)).LengthSquared() < 1000000.0)
@@ -681,12 +642,12 @@ namespace xirathonxbox.spaceengineers.mods
 
         private bool ShouldDrawHighAlertMark(EnergySignature poi)
         {
-            return poi.POIType != EnergySignatureType.Scenario && this.IsPoiAtHighAlert(poi);
+            return this.IsPoiAtHighAlert(poi);
         }
 
         private bool IsGrid()
         {
-            return this.POIType == EnergySignatureType.SmallEntity || this.POIType == EnergySignatureType.LargeEntity || this.POIType == EnergySignatureType.StaticEntity;
+            return true;
         }
 
         private static void DrawIcon(
@@ -702,41 +663,16 @@ namespace xirathonxbox.spaceengineers.mods
             string texture;
             switch (poiType)
             {
-                case EnergySignatureType.Unknown:
-                case EnergySignatureType.UnknownEntity:
-                case EnergySignatureType.Character:
-                case EnergySignatureType.SmallEntity:
-                case EnergySignatureType.LargeEntity:
-                case EnergySignatureType.StaticEntity:
+                case EnergySignatureType.Single:
                     string iconForRelationship = EnergySignature.GetIconForRelationship(relationship);
                     EnergySignature.DrawIcon(renderer, iconForRelationship, screenPosition, markerColor, sizeScale);
                     return;
-                case EnergySignatureType.Target:
-                    texture = "HudAtlas0.dds_TargetTurret";
-                    break;
                 case EnergySignatureType.Group:
-                    return;
-                case EnergySignatureType.Ore:
-                    texture = "HudAtlas0.dds_HudOre";
-                    markerColor = Color.Khaki;
-                    break;
-                case EnergySignatureType.Hack:
-                    texture = "HudAtlas0.dds_hit_confirmation";
-                    break;
-                case EnergySignatureType.GPS:
-                case EnergySignatureType.Objective:
-                    string centerIconSprite1 = "Textures\\HUD\\marker_gps.dds";
-                    EnergySignature.DrawIcon(renderer, centerIconSprite1, screenPosition, markerColor, sizeScale);
-                    return;
-                case EnergySignatureType.ButtonMarker:
-                    return;
-                case EnergySignatureType.Scenario:
-                    string centerIconSprite2 = "Textures\\HUD\\marker_scenario.dds";
-                    EnergySignature.DrawIcon(renderer, centerIconSprite2, screenPosition, markerColor, sizeScale);
                     return;
                 default:
                     return;
             }
+
             if (!string.IsNullOrWhiteSpace(empty))
             {
                 Vector2 vector2_2 = vector2_1 * sizeScale;
@@ -820,7 +756,7 @@ namespace xirathonxbox.spaceengineers.mods
             int num1 = this.IsPoiAtHighAlert(poiA).CompareTo(this.IsPoiAtHighAlert(poiB));
             if (num1 != 0)
                 return num1;
-            if (poiA.POIType >= EnergySignatureType.UnknownEntity && poiB.POIType >= EnergySignatureType.UnknownEntity)
+            if (poiA.POIType >= EnergySignatureType.Single && poiB.POIType >= EnergySignatureType.Single)
             {
                 int num2 = poiA.POIType.CompareTo((object)poiB.POIType);
                 if (num2 != 0)
@@ -847,22 +783,28 @@ namespace xirathonxbox.spaceengineers.mods
 
     public enum EnergySignatureType
     {
-        Unknown,
-        Target,
-        Group,
-        Ore,
-        Hack,
-        UnknownEntity,
-        Character,
-        SmallEntity,
-        LargeEntity,
-        StaticEntity,
-        GPS,
-        ButtonMarker,
-        Objective,
-        Scenario,
-        ContractGPS,
+        Single,
+        Group
     }
+
+    //public enum EnergySignatureType
+    //{
+    //    Unknown,
+    //    Target,
+    //    Group,
+    //    Ore,
+    //    Hack,
+    //    UnknownEntity,
+    //    Character,
+    //    SmallEntity,
+    //    LargeEntity,
+    //    StaticEntity,
+    //    GPS,
+    //    ButtonMarker,
+    //    Objective,
+    //    Scenario,
+    //    ContractGPS,
+    //}
 
     public enum EnergySignatureState
     {
