@@ -2,6 +2,7 @@
 using System.Text;
 using System.Collections.Generic;
 
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -22,12 +23,14 @@ namespace xirathonxbox.spaceengineers.mods
     public class RealisticImprovedSolarPanel : MySessionComponentBase
     {
         const float densityMultiplier = 0.6f; //400 * 0.4 = 160; 
+        const float maxPowerOutputMultiplier = 2.5f;
 
         //track the solar panel data so when we change it, we don't trigger an infinite loop
         private Dictionary<long, RealisticSolarPanelData> solarPanelData = new Dictionary<long, RealisticSolarPanelData>();
 
         public override void LoadData()
         {
+            EditSolarPanelDefinitions();
             MyEntities.OnEntityCreate += MyEntities_OnEntityCreate;
             MyEntities.OnEntityRemove += MyEntities_OnEntityRemove;
         }
@@ -221,6 +224,24 @@ namespace xirathonxbox.spaceengineers.mods
 
             //update
             UpdatePower(source.Entity as IMySolarPanel, data);
+        }
+
+        private void EditSolarPanelDefinitions()
+        {
+            HashSet<MyDefinitionId> definitionsIDs = new HashSet<MyDefinitionId>();
+            MyDefinitionManager.Static.TryGetDefinitionsByTypeId(typeof(Sandbox.Common.ObjectBuilders.MyObjectBuilder_SolarPanel), definitionsIDs);
+
+            foreach (MyDefinitionId definitionId in definitionsIDs)
+            {
+                MyCubeBlockDefinition definition;
+                MyDefinitionManager.Static.TryGetCubeBlockDefinition(definitionId, out definition);
+
+                if (definition != null)
+                {
+                    MySolarPanelDefinition solarPanelDefinition = (MySolarPanelDefinition)definition;
+                    solarPanelDefinition.MaxPowerOutput *= maxPowerOutputMultiplier;
+                }
+            }
         }
     }
 
