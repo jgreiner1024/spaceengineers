@@ -64,9 +64,6 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Data\CubeBlocks.sbc" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy $(ProjectDir)Data\*.sbc C:\Users\jgrei\AppData\Roaming\SpaceEngineers\Mods\$(ProjectName)\Data\*.sbc
